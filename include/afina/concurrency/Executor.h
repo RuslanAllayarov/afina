@@ -28,7 +28,10 @@ class Executor {
         kStopped
     };
 
-    Executor(std::string name, int size);
+    Executor(std::string name, std::size_t size, std::size_t high=6, std::size_t low=0,std::size_t timeout=100):
+    max_queue_size(size), high_watermark(high), low_watermark(low), idle_time(timeout), free_threads(0){}
+
+    //Executor(std::string name, int size);
     ~Executor();
 
     /**
@@ -51,12 +54,15 @@ class Executor {
         auto exec = std::bind(std::forward<F>(func), std::forward<Types>(args)...);
 
         std::unique_lock<std::mutex> lock(this->mutex);
-        if (state != State::kRun) {
+        if (state != State::kRun || tasks.size() >= _max_queue_size) {
             return false;
         }
 
         // Enqueue new task
         tasks.push_back(exec);
+        if ( free_threads == 0 && threads.size() < hight_watermark){
+            threads.push_back(std::thread(&perform, this));
+        }
         empty_condition.notify_one();
         return true;
     }
@@ -84,7 +90,7 @@ private:
     std::condition_variable empty_condition;
 
     /**
-     * Vector of actual threads that perorm execution
+     * Vector of actual threads that perform execution
      */
     std::vector<std::thread> threads;
 
@@ -97,6 +103,19 @@ private:
      * Flag to stop bg threads
      */
     State state;
+    /**
+     * Conditional variable to await for server to stop
+     */
+    std::condition_variable stop_condition;
+
+    std::size_t high_watermark;
+    std::size_t low_watermark;
+    std::size_t max_queue_size;
+    std::size_t idle_time;
+    std::size_t free_threads;
+
+    void _erase_thread();
+
 };
 
 } // namespace Concurrency
