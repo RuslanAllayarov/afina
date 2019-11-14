@@ -119,6 +119,12 @@ void ServerImpl::Stop() {
     if (eventfd_write(_event_fd, 1)) {
         throw std::runtime_error("Failed to wakeup workers");
     }
+
+    // CLose connections
+    for (auto& it : client_connections){
+        close(it -> socket);
+        delete it;
+    }
 }
 
 // See Server.h
@@ -193,7 +199,7 @@ void ServerImpl::OnRun() {
                 }
 
                 // Register the new FD to be monitored by epoll.
-                Connection *pc = new Connection(infd);
+                Connection *pc = new Connection(infd, _logger, pStorage);
                 if (pc == nullptr) {
                     throw std::runtime_error("Failed to allocate connection");
                 }
@@ -207,11 +213,14 @@ void ServerImpl::OnRun() {
                         _logger->debug("epoll_ctl failed during connection register in workers'epoll: error {}", epoll_ctl_retval);
                         pc->OnError();
                         delete pc;
-                    }
+                    }else{ //
+                        std::lock_guard<std::mutex> lock(_mutex);
+                        _connections.insert(pc);
                 }
             }
         }
     }
+    close(_server_socket);
     _logger->warn("Acceptor stopped");
 }
 

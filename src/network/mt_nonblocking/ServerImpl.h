@@ -4,7 +4,11 @@
 #include <thread>
 #include <vector>
 
+#include <set>
+#include <mutex>
+
 #include <afina/network/Server.h>
+#include "Connection.h"
 
 namespace spdlog {
 class logger;
@@ -53,16 +57,20 @@ private:
 
     // Threads that accepts new connections, each has private epoll instance
     // but share global server socket
-    std::vector<std::thread> _acceptors;
+    std::vector<std::thread> _acceptors; // NEW
 
     // EPOLL instance shared between workers
-    int _data_epoll_fd;
+    int _data_epoll_fd; // NEW
 
     // Curstom event "device" used to wakeup workers
     int _event_fd;
 
     // threads serving read/write requests
-    std::vector<Worker> _workers;
+    std::vector<Worker> _workers; // NEW
+
+    std::set <Connection *> client_connections;
+
+    std::mutex _mutex;
 };
 
 } // namespace MTnonblock
