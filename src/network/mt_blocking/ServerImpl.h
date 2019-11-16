@@ -60,7 +60,7 @@ private:
     std::thread _thread;
 
     int _MAX_WORKERS_ = 256;
-    int _workers_current;
+    int _workers_current; 
     std::mutex _workers_mutex;
     std::condition_variable _close;
 

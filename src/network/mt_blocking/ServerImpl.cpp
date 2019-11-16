@@ -99,7 +99,7 @@ void ServerImpl::Join() {
         _close.wait(guard);
     }
     _openned_socks.clear();
-
+    
     assert(_thread.joinable());
     _thread.join();
 }
@@ -141,11 +141,12 @@ void ServerImpl::OnRun() {
         // TODO: Start new thread and process data from/to connection
         {
             std::lock_guard<std::mutex> guard(_workers_mutex);
-            if (_workers_current < _MAX_WORKERS_) {
+            if ((_workers_current < _MAX_WORKERS_) && (running.load())) {
                 _workers_current += 1;
                 _openned_socks.insert(client_socket);
                 std::thread new_worker = std::thread(&ServerImpl::OnWork, this, client_socket);
-                new_worker.join();
+                // Можно сохранять обьект потока
+                new_worker.detach();
             } else {
                 _logger->warn("No free workers for client: {}\n", client_socket);
                 static const std::string msg = "No free workers, try later\n";
@@ -159,7 +160,7 @@ void ServerImpl::OnRun() {
     }
     close(_server_socket);
     // Cleanup on exit...
-    _logger->warn("Network stopped");
+    _logger->warn("Network stopped"); 
 }
 
 void ServerImpl::OnWork(int client_socket) {
