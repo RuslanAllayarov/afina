@@ -12,7 +12,6 @@ void Executor::Start() {
     free_threads = 0;
 }
 
-
 void Executor::Stop(bool await) {
     if (state == State::kStopped) {
         return;
@@ -22,9 +21,10 @@ void Executor::Stop(bool await) {
     while (tasks.size() > 0){
         empty_condition.notify_one();
     }
-    //empty_condition.notify_all();
     if (await) {
-        stop_condition.wait(lock, [this]() { return (this->state == Executor::State::kStopped); });
+        while (state == State::kStopping){
+            stop_condition.wait(lock);
+        }
     }
     state = State::kStopped;
 }
@@ -70,7 +70,7 @@ void perform(Executor *executor) {
 
 void Executor::_erase_thread() {
     std::thread::id cur_thread_id = std::this_thread::get_id();
-    auto iter = std::find_if(threads.begin(), threads.end(), [](std::thread &t) { return (t.get_id() == cur_thread_id); });
+    auto it = threads.find(std::this_thread::get_id());
     if (iter != threads.end()) {
         //iter->detach();
         free_threads--;

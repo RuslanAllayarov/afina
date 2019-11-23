@@ -90,9 +90,9 @@ private:
     std::condition_variable empty_condition;
 
     /**
-     * Vector of actual threads that perform execution
+     * Map of actual threads that perform execution
      */
-    std::vector<std::thread> threads;
+    std::unordered_map<std::thread::id,std::thread> threads;
 
     /**
      * Task queue
