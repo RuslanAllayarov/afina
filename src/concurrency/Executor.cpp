@@ -19,7 +19,7 @@ void Executor::Stop(bool await) {
     std::unique_lock<std::mutex> lock(mutex);
     state = State::kStopping;
     while (tasks.size() > 0){
-        empty_condition.notify_one();
+        empty_condition.notify_all();
     }
     if (await) {
         while (state == State::kStopping){
