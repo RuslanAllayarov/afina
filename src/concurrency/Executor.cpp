@@ -7,9 +7,9 @@ void Executor::Start() {
     std::unique_lock<std::mutex> lock(mutex);
     state = State::kRun;
     for (int i = 0; i < low_watermark; i++) {
-        threads.push_back(std::thread(&perform, this));
+        std::thread t(&(perform), this);
+        threads.insert(std::move(std::make_pair(t.get_id(), std::move(t))));
     }
-    free_threads = 0;
 }
 
 void Executor::Stop(bool await) {
