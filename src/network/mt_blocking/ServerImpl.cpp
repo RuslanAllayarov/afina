@@ -148,6 +148,7 @@ void ServerImpl::OnRun() {
                 // Можно сохранять обьект потока
                 new_worker.detach();
             } else {
+                
                 _logger->warn("No free workers for client: {}\n", client_socket);
                 static const std::string msg = "No free workers, try later\n";
                 if (send(client_socket, msg.data(), msg.size(), 0) <= 0) {
@@ -251,12 +252,13 @@ void ServerImpl::OnWork(int client_socket) {
     }
 
     // We are done with this connection
-    std::lock_guard<std::mutex> guard(_workers_mutex);
+    {std::lock_guard<std::mutex> guard(_workers_mutex);
     _openned_socks.erase(client_socket);
     close(client_socket);
     _workers_current --;
     if (_workers_current == 0) {
         _close.notify_all();
+    }
     }
 }
 
