@@ -32,7 +32,9 @@ class Executor {
     max_queue_size(size), high_watermark(high), low_watermark(low), idle_time(timeout), free_threads(0){}
 
     //Executor(std::string name, int size);
-    ~Executor();
+    ~Executor(){
+        Stop(true);
+    }
 
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
