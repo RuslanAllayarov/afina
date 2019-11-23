@@ -57,7 +57,13 @@ void perform(Executor *executor) {
             task = executor->tasks.front();
             executor->tasks.pop_front();
         }
-        task();
+        try{
+            task();
+        }
+        catch(std::exception& e){
+            //Напиши вывод какой - нибудь
+            std::terminate();
+        }
     }
     {
         std::unique_lock<std::mutex> lock(executor->mutex);
