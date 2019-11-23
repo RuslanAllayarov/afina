@@ -60,9 +60,6 @@ class Executor {
 
         // Enqueue new task
         tasks.push_back(exec);
-        if ( free_threads == 0 && threads.size() < hight_watermark){
-            threads.push_back(std::thread(&perform, this));
-        }
         empty_condition.notify_one();
         return true;
     }
