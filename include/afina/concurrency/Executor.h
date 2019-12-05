@@ -29,7 +29,7 @@ class Executor {
     };
 
     Executor(std::string name, std::size_t size, std::size_t high=6, std::size_t low=0,std::size_t timeout=100):
-    max_queue_size(size), high_watermark(high), low_watermark(low), idle_time(timeout), free_threads(0){}
+    max_queue_size(size), high_watermark(high), low_watermark(low), idle_time(timeout), free_threads(0), threads(0){}
 
     //Executor(std::string name, int size);
     ~Executor(){
@@ -91,8 +91,8 @@ private:
     /**
      * Map of actual threads that perform execution
      */
-    std::unordered_map<std::thread::id,std::thread> threads;
-
+    //std::unordered_map<std::thread::id,std::thread> threads;
+    std::size_t threads;
     /**
      * Task queue
      */
@@ -112,8 +112,6 @@ private:
     std::size_t max_queue_size;
     std::size_t idle_time;
     std::size_t free_threads;
-
-    void _erase_thread();
 
 };
 

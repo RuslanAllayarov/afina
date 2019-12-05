@@ -6,27 +6,24 @@ namespace Concurrency {
 void Executor::Start() {
     std::unique_lock<std::mutex> lock(mutex);
     state = State::kRun;
-    for (int i = 0; i < low_watermark; i++) {
+    for (std::size_t i = 0; i < low_watermark; i++) {
         std::thread t(&(perform), this);
-        threads.insert(std::move(std::make_pair(t.get_id(), std::move(t))));
+        t.detach();
+        ++threads;
     }
 }
 
+
 void Executor::Stop(bool await) {
-    if (state == State::kStopped) {
-        return;
-    }
     std::unique_lock<std::mutex> lock(mutex);
-    state = State::kStopping;
-    while (tasks.size() > 0){
-        empty_condition.notify_all();
-    }
-    if (await) {
-        while (state == State::kStopping){
-            stop_condition.wait(lock);
+    if(state==State::kRun){
+        state=State::kStopping;
+        if(await && threads>0){
+            stop_condition.wait(lock,[&](){ return threads==0;});
         }
+    }else{
+        state=State::kStopped;
     }
-    state = State::kStopped;
 }
 
 
@@ -42,13 +39,13 @@ void perform(Executor *executor) {
                 executor->free_threads++;
                 if (executor->empty_condition.wait_until(lock, time_until) == std::cv_status::timeout) {
                     if (executor->threads.size() > executor->low_watermark) {
-                        executor->_erase_thread();
+                        --executor->_free_threads;
                         return;
                     } else {
                         executor->empty_condition.wait(lock);
                     }
                 }
-                executor->free_threads--;
+                --executor->_free_threads;
             }
             // stop waiting
             if (executor->tasks.empty()) {
@@ -60,33 +57,18 @@ void perform(Executor *executor) {
         try{
             task();
         }
-        catch(std::exception& e){
-            //Напиши вывод какой - нибудь
+        catch(...){
+            //Вывод какой - нибудь
             std::terminate();
         }
     }
     {
         std::unique_lock<std::mutex> lock(executor->mutex);
-        executor->_erase_thread();
-        if (executor->threads.empty()) {
+        if (executor->state == Executor::State::kStopping && executor->threads==0) {
+            executor->state = Executor::State::kStopped;
             executor->stop_condition.notify_all();
         }
     }
 }
-
-void Executor::_erase_thread() {
-    std::thread::id cur_thread_id = std::this_thread::get_id();
-    auto it = threads.find(std::this_thread::get_id());
-    if (iter != threads.end()) {
-        //iter->detach();
-        free_threads--;
-        threads.erase(iter);
-        return;
-    }
-    throw std::runtime_error("error while erasing thread");
-}
-
-
-
 }
 } // namespace Afina
