@@ -28,13 +28,12 @@ class Executor {
         kStopped
     };
 
-    Executor(std::string name, std::size_t size, std::size_t high=6, std::size_t low=0,std::size_t timeout=100):
-    _max_queue_size(size), _high_watermark(high), _low_watermark(low), _idle_time(timeout), _free_threads(0), threads(0){}
+    Executor(std::string name, std::size_t size, std::size_t high = 6, std::size_t low = 0, std::size_t timeout = 100)
+        : _max_queue_size(size), _high_watermark(high), _low_watermark(low), _idle_time(timeout), _free_threads(0),
+          threads(0) {}
 
-    //Executor(std::string name, int size);
-    ~Executor(){
-        Stop(true);
-    }
+    // Executor(std::string name, int size);
+    ~Executor() { Stop(true); }
     void Start();
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
@@ -91,7 +90,7 @@ private:
     /**
      * Map of actual threads that perform execution
      */
-    //std::unordered_map<std::thread::id,std::thread> threads;
+    // std::unordered_map<std::thread::id,std::thread> threads;
     std::size_t threads;
     /**
      * Task queue
@@ -112,7 +111,6 @@ private:
     std::size_t _max_queue_size;
     std::size_t _idle_time;
     std::size_t _free_threads;
-
 };
 
 } // namespace Concurrency

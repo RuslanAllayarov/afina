@@ -3,19 +3,17 @@
 namespace Afina {
 namespace Concurrency {
 
-
 void Executor::Stop(bool await) {
     std::unique_lock<std::mutex> lock(mutex);
-    if(state==State::kRun){
-        state=State::kStopping;
-        if(await && threads>0){
-            stop_condition.wait(lock,[&](){ return threads==0;});
+    if (state == State::kRun) {
+        state = State::kStopping;
+        if (await && threads > 0) {
+            stop_condition.wait(lock, [&]() { return threads == 0; });
         }
-    }else{
-        state=State::kStopped;
+    } else {
+        state = State::kStopped;
     }
 }
-
 
 void perform(Executor *executor) {
     // new thread
@@ -44,17 +42,16 @@ void perform(Executor *executor) {
             task = executor->tasks.front();
             executor->tasks.pop_front();
         }
-        try{
+        try {
             task();
-        }
-        catch(...){
+        } catch (...) {
             //Вывод какой - нибудь
             std::terminate();
         }
     }
     {
         std::unique_lock<std::mutex> lock(executor->mutex);
-        if (executor->state == Executor::State::kStopping && executor->threads==0) {
+        if (executor->state == Executor::State::kStopping && executor->threads == 0) {
             executor->state = Executor::State::kStopped;
             executor->stop_condition.notify_all();
         }
@@ -71,6 +68,5 @@ void Executor::Start() {
     }
 }
 
-
-}
+} // namespace Concurrency
 } // namespace Afina
