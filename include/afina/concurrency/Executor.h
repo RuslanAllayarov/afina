@@ -29,13 +29,13 @@ class Executor {
     };
 
     Executor(std::string name, std::size_t size, std::size_t high=6, std::size_t low=0,std::size_t timeout=100):
-    max_queue_size(size), high_watermark(high), low_watermark(low), idle_time(timeout), free_threads(0), threads(0){}
+    _max_queue_size(size), _high_watermark(high), _low_watermark(low), _idle_time(timeout), _free_threads(0), threads(0){}
 
     //Executor(std::string name, int size);
     ~Executor(){
         Stop(true);
     }
-
+    void Start();
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
      * free. All enqueued jobs will be complete.
@@ -107,10 +107,10 @@ private:
      */
     std::condition_variable stop_condition;
 
-    std::size_t high_watermark;
-    std::size_t low_watermark;
-    std::size_t max_queue_size;
-    std::size_t idle_time;
+    std::size_t _high_watermark;
+    std::size_t _low_watermark;
+    std::size_t _max_queue_size;
+    std::size_t _idle_time;
     std::size_t _free_threads;
 
 };
