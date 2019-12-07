@@ -111,7 +111,7 @@ private:
     std::size_t low_watermark;
     std::size_t max_queue_size;
     std::size_t idle_time;
-    std::size_t free_threads;
+    std::size_t _free_threads;
 
 };
 
