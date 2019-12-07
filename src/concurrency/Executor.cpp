@@ -3,16 +3,6 @@
 namespace Afina {
 namespace Concurrency {
 
-void Executor::Start() {
-    std::unique_lock<std::mutex> lock(mutex);
-    state = State::kRun;
-    for (std::size_t i = 0; i < low_watermark; i++) {
-        std::thread t(&(perform), this);
-        t.detach();
-        ++threads;
-    }
-}
-
 
 void Executor::Stop(bool await) {
     std::unique_lock<std::mutex> lock(mutex);
@@ -33,12 +23,12 @@ void perform(Executor *executor) {
         std::function<void()> task;
         {
             std::unique_lock<std::mutex> lock(executor->mutex);
-            auto time_until = std::chrono::system_clock::now() + std::chrono::milliseconds(executor->idle_time);
+            auto time_until = std::chrono::system_clock::now() + std::chrono::milliseconds(executor->_idle_time);
             while (executor->tasks.empty() && executor->state == Executor::State::kRun) {
                 // waiting
-                executor->free_threads++;
+                executor->_free_threads++;
                 if (executor->empty_condition.wait_until(lock, time_until) == std::cv_status::timeout) {
-                    if (executor->threads.size() > executor->low_watermark) {
+                    if (executor->threads > executor->_low_watermark) {
                         --executor->_free_threads;
                         return;
                     } else {
@@ -70,5 +60,17 @@ void perform(Executor *executor) {
         }
     }
 }
+
+void Executor::Start() {
+    std::unique_lock<std::mutex> lock(mutex);
+    state = State::kRun;
+    for (std::size_t i = 0; i < _low_watermark; i++) {
+        std::thread t(&(perform), this);
+        t.detach();
+        ++threads;
+    }
+}
+
+
 }
 } // namespace Afina
