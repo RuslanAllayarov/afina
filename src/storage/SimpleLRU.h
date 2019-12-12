@@ -34,7 +34,6 @@ public:
             _lru_head.reset();
         }
     };
->>>>>>> c0297fbf272096c5cd6650050c7ccc95708f6082
 
 public:
     // Implements Afina::Storage interface
