@@ -19,14 +19,12 @@ void Executor::Stop(bool await){
     if (state == State::kRun){
         state = State::kStopping;
         // await == True -> wait
-        if (await){
-            if (_count_threads > 0){
-                stop_condition.wait(lock, [&](){ return _count_threads == 0; });
-            }
-            // if law_watermark == 0
-            else{
-                state = State::kStopped;
-            }
+        if (await && _count_threads > 0){
+            stop_condition.wait(lock, [&](){ return _count_threads == 0; });
+        }
+        // if law_watermark == 0
+        else if (_count_threads == 0){
+            state = State::kStopped;
         }
     }
 }
