@@ -20,10 +20,13 @@ void Executor::Stop(bool await){
         state = State::kStopping;
         // await == True -> wait
         if (await){
-            stop_condition.wait(lock, [&](){ return _count_threads == 0; });
-        }
-        else{
-            state = State::kStopped;
+            if (_count_threads > 0){
+                stop_condition.wait(lock, [&](){ return _count_threads == 0; });
+            }
+            // if law_watermark == 0
+            else{
+                state = State::kStopped;
+            }
         }
     }
 }
@@ -64,7 +67,7 @@ void perform(Afina::Concurrency::Executor *ex)
                 task();
             }
             catch(...){
-                //std::terminate();
+                std::terminate();
             }
         }
         have = false;

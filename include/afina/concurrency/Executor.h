@@ -35,10 +35,7 @@ public:
           _count_threads(0) {}
     
     ~Executor(){
-        std::unique_lock<std::mutex> lock(mutex);
-        if (state == State::kRun) {
-            Stop(true);
-        }
+        Stop(true);
     }
 
     /**
@@ -128,6 +125,7 @@ public:
             std::thread t(&(perform), this);
             t.detach();
             _count_threads ++;
+            //_free_threads ++;
         }
         // Enqueue new task
         tasks.push_back(exec);
