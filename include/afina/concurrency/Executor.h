@@ -11,11 +11,13 @@
 
 namespace Afina {
 namespace Concurrency {
-
+class Executor;
+void perform(Afina::Concurrency::Executor *executor);
 /**
  * # Thread pool
  */
 class Executor {
+public:
     enum class State {
         // Threadpool is fully operational, tasks could be added and get executed
         kRun,
@@ -30,11 +32,15 @@ class Executor {
 
     Executor(std::string name, std::size_t size, std::size_t high = 6, std::size_t low = 0, std::size_t timeout = 100)
         : _max_queue_size(size), _high_watermark(high), _low_watermark(low), _idle_time(timeout), _free_threads(0),
-          threads(0) {}
+          _count_threads(0) {}
+    
+    ~Executor(){
+        std::unique_lock<std::mutex> lock(mutex);
+        if (state == State::kRun) {
+            Stop(true);
+        }
+    }
 
-    // Executor(std::string name, int size);
-    ~Executor() { Stop(true); }
-    void Start();
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
      * free. All enqueued jobs will be complete.
@@ -43,27 +49,7 @@ class Executor {
      */
     void Stop(bool await = false);
 
-    /**
-     * Add function to be executed on the threadpool. Method returns true in case if task has been placed
-     * onto execution queue, i.e scheduled for execution and false otherwise.
-     *
-     * That function doesn't wait for function result. Function could always be written in a way to notify caller about
-     * execution finished by itself
-     */
-    template <typename F, typename... Types> bool Execute(F &&func, Types... args) {
-        // Prepare "task"
-        auto exec = std::bind(std::forward<F>(func), std::forward<Types>(args)...);
-
-        std::unique_lock<std::mutex> lock(this->mutex);
-        if (state != State::kRun || tasks.size() >= _max_queue_size) {
-            return false;
-        }
-
-        // Enqueue new task
-        tasks.push_back(exec);
-        empty_condition.notify_one();
-        return true;
-    }
+    void Start(); // add threads
 
 private:
     // No copy/move/assign allowed
@@ -86,12 +72,21 @@ private:
      * Conditional variable to await new data in case of empty queue
      */
     std::condition_variable empty_condition;
+    std::condition_variable stop_condition;// wait in Stop
 
     /**
-     * Map of actual threads that perform execution
+     * Vector of actual threads that perorm execution
      */
-    // std::unordered_map<std::thread::id,std::thread> threads;
-    std::size_t threads;
+    //std::vector<std::thread> threads;
+    /*
+    * Count of threads
+    */
+    std::size_t _count_threads;
+
+    /**
+    * Count of free threads
+    */
+    std::size_t _free_threads;
     /**
      * Task queue
      */
@@ -102,18 +97,45 @@ private:
      */
     State state;
     /**
-     * Conditional variable to await for server to stop
-     */
-    std::condition_variable stop_condition;
-
+     * Some features of Executor
+    */
+    std::size_t _max_queue_size;
     std::size_t _high_watermark;
     std::size_t _low_watermark;
-    std::size_t _max_queue_size;
     std::size_t _idle_time;
-    std::size_t _free_threads;
+public:
+    /**
+     * Add function to be executed on the threadpool. Method returns true in case if task has been placed
+     * onto execution queue, i.e scheduled for execution and false otherwise.
+     *
+     * That function doesn't wait for function result. Function could always be written in a way to notify caller about
+     * execution finished by itself
+     */
+    template <typename F, typename... Types> bool Execute(F &&func, Types... args) {
+        // Prepare "task"
+        auto exec = std::bind(std::forward<F>(func), std::forward<Types>(args)...);
+
+        std::unique_lock<std::mutex> lock(this->mutex);
+        if (state != State::kRun) {
+            return false;
+        }
+        // count
+        if (tasks.size() > _max_queue_size){
+            return false;
+        }
+        // can add thread and no free thread
+        if (_free_threads == 0 && _count_threads <_high_watermark){
+            std::thread t(&(perform), this);
+            t.detach();
+            _count_threads ++;
+        }
+        // Enqueue new task
+        tasks.push_back(exec);
+        empty_condition.notify_one();
+        return true;
+    }
 };
 
 } // namespace Concurrency
 } // namespace Afina
-
 #endif // AFINA_CONCURRENCY_EXECUTOR_H
