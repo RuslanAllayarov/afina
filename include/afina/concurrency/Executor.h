@@ -33,10 +33,8 @@ public:
     Executor(std::string name, std::size_t size, std::size_t high = 6, std::size_t low = 0, std::size_t timeout = 100)
         : _max_queue_size(size), _high_watermark(high), _low_watermark(low), _idle_time(timeout), _free_threads(0),
           _count_threads(0) {}
-    
-    ~Executor(){
-        Stop(true);
-    }
+
+    ~Executor() { Stop(true); }
 
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
@@ -69,20 +67,20 @@ private:
      * Conditional variable to await new data in case of empty queue
      */
     std::condition_variable empty_condition;
-    std::condition_variable stop_condition;// wait in Stop
+    std::condition_variable stop_condition; // wait in Stop
 
     /**
      * Vector of actual threads that perorm execution
      */
-    //std::vector<std::thread> threads;
+    // std::vector<std::thread> threads;
     /*
-    * Count of threads
-    */
+     * Count of threads
+     */
     std::size_t _count_threads;
 
     /**
-    * Count of free threads
-    */
+     * Count of free threads
+     */
     std::size_t _free_threads;
     /**
      * Task queue
@@ -95,11 +93,12 @@ private:
     State state;
     /**
      * Some features of Executor
-    */
+     */
     std::size_t _max_queue_size;
     std::size_t _high_watermark;
     std::size_t _low_watermark;
     std::size_t _idle_time;
+
 public:
     /**
      * Add function to be executed on the threadpool. Method returns true in case if task has been placed
@@ -117,14 +116,14 @@ public:
             return false;
         }
         // count
-        if (tasks.size() > _max_queue_size){
+        if (tasks.size() > _max_queue_size) {
             return false;
         }
         // can add thread and no free thread
-        if (_free_threads == 0 && _count_threads <_high_watermark){
+        if (_free_threads == 0 && _count_threads < _high_watermark) {
             std::thread t(&(perform), this);
             t.detach();
-            _count_threads ++;
+            _count_threads++;
             //_free_threads ++;
         }
         // Enqueue new task
