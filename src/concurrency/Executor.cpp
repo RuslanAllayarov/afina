@@ -41,11 +41,6 @@ void perform(Afina::Concurrency::Executor *ex) {
             if (ex->state != Executor::State::kRun){
                 break;
             }
-        }
-//    }
-//    while (ex->state == Executor::State::kRun) {
-        {
-            std::unique_lock<std::mutex> lock(ex->mutex);
             ex->_free_threads++;
             auto time = std::chrono::system_clock::now() + std::chrono::milliseconds(ex->_idle_time);
             if (!ex->empty_condition.wait_until(lock, time, [&]() { return ex->tasks.empty() == 0; })) {
