@@ -39,7 +39,7 @@ void perform(Afina::Concurrency::Executor *ex) {
         std::unique_lock<std::mutex> lock(ex->mutex);
         if (ex->state != Executor::State::kRun){
             break;
-            }
+        }
         {
             std::unique_lock<std::mutex> lock(ex->mutex);
             ex->_free_threads++;
