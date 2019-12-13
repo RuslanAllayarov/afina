@@ -35,7 +35,11 @@ void perform(Afina::Concurrency::Executor *ex) {
     std::function<void()> task;
     //have -> task.empty()
     bool have;
-    while (ex->state == Executor::State::kRun) {
+    while(True){
+        std::unique_lock<std::mutex> lock(ex->mutex);
+        if (ex->state != Executor::State::kRun){
+            break;
+            }
         {
             std::unique_lock<std::mutex> lock(ex->mutex);
             ex->_free_threads++;
