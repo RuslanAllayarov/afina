@@ -90,6 +90,7 @@ private:
     /**
      * Flag to stop bg threads
      */
+    // возможно надо сделать atomic
     State state;
     /**
      * Some features of Executor
