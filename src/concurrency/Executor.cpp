@@ -52,7 +52,8 @@ void perform(Afina::Concurrency::Executor *ex) {
                     break;
                 }
                 have = false;
-            } else {
+            } 
+            else {
                 task = (ex->tasks.front());
                 ex->tasks.pop_front();
                 have = true;
