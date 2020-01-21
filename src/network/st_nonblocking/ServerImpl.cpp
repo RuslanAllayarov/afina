@@ -91,9 +91,11 @@ void ServerImpl::Stop() {
     if (eventfd_write(_event_fd, 1)) {
         throw std::runtime_error("Failed to wakeup workers");
     }
-    for (auto client : client_connections) {
-        shutdown(client->_socket, SHUT_RD);
+    for(auto it: _connections){
+        close(it->_socket);
+        delete it;
     }
+    close(_server_socket);
 }
 
 // See Server.h
@@ -167,7 +169,7 @@ void ServerImpl::OnRun() {
 
                 close(pc->_socket);
                 pc->OnClose();
-
+                _connections.erase(pc);
                 delete pc;
             } else if (pc->_event.events != old_mask) {
                 if (epoll_ctl(epoll_descr, EPOLL_CTL_MOD, pc->_socket, &pc->_event)) {
@@ -175,7 +177,7 @@ void ServerImpl::OnRun() {
 
                     close(pc->_socket);
                     pc->OnClose();
-
+                    _connections.erase(pc);
                     delete pc;
                 }
             }
@@ -210,8 +212,7 @@ void ServerImpl::OnNewConnection(int epoll_descr) {
         }
 
         // Register the new FD to be monitored by epoll.
-        Connection *pc = new(std::nothrow) Connection(infd, pStorage);
-        client_connections.insert(pc);
+        Connection *pc = new Connection(infd,_logger, pStorage);
         if (pc == nullptr) {
             throw std::runtime_error("Failed to allocate connection");
         }
@@ -222,6 +223,8 @@ void ServerImpl::OnNewConnection(int epoll_descr) {
             if (epoll_ctl(epoll_descr, EPOLL_CTL_ADD, pc->_socket, &pc->_event)) {
                 pc->OnError();
                 delete pc;
+            }else{
+                _connections.insert(pc);
             }
         }
     }

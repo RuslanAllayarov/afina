@@ -3,10 +3,12 @@
 
 #include <cstring>
 #include <iostream>
-#include <afina/Storage.h> 
-#include <spdlog/logger.h> 
-#include <afina/execute/Command.h> 
-#include <protocol/Parser.h> 
+#include <vector>
+
+#include <afina/Storage.h>
+#include <afina/logging/Service.h>
+#include <afina/execute/Command.h>
+#include <protocol/Parser.h>
 #include <sys/epoll.h>
 
 namespace Afina {
@@ -15,7 +17,8 @@ namespace STnonblock {
 
 class Connection {
 public:
-    Connection(int s, std::shared_ptr<Afina::Storage> ps) : _socket(s), pStorage(ps) {
+    Connection(int s, std::shared_ptr<spdlog::logger> l, std::shared_ptr<Afina::Storage> stg)
+    : _socket(s), _logger(l), pStorage(stg) {
         std::memset(&_event, 0, sizeof(struct epoll_event));
         _event.data.ptr = this;
     }
@@ -35,18 +38,20 @@ private:
 
     int _socket;
     struct epoll_event _event;
+    bool _is_alive;
 
-    bool _is_alive = true;
-    std::shared_ptr<spdlog::logger> _logger; 
-    int already_read_bytes = 0; // уже считанные байты
-    char client_buffer[4096];
-    std::size_t arg_remains;
-    std::string _results;
-    Protocol::Parser parser; 
-    std::string argument_for_command;
-    std::unique_ptr<Execute::Command> command_to_execute;
+    std::shared_ptr<spdlog::logger> _logger;
     std::shared_ptr<Afina::Storage> pStorage;
+    std::unique_ptr<Afina::Execute::Command> command_to_execute;
+    std::vector<std::string> _results;
+    Protocol::Parser parser;
+    std::size_t arg_remains;
+    std::string argument_for_command;
 
+    int _written_bytes;
+    int _read_bytes;
+    int _bytes_for_read;
+    char client_buffer[4096];
 };
 
 } // namespace STnonblock
