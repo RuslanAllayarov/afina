@@ -57,18 +57,18 @@ private:
 
     // Threads that accepts new connections, each has private epoll instance
     // but share global server socket
-    std::vector<std::thread> _acceptors; // NEW
+    std::vector<std::thread> _acceptors;
 
     // EPOLL instance shared between workers
-    int _data_epoll_fd; // NEW
+    int _data_epoll_fd;
 
-    // Curstom event "device" used to wakeup workers
+    // Custom event "device" used to wakeup workers
     int _event_fd;
 
     // threads serving read/write requests
-    std::vector<Worker> _workers; // NEW
+    std::vector<Worker> _workers;
 
-    std::set <Connection *> client_connections;
+    std::set <Connection *> _connections;
 
     std::mutex _mutex;
 };

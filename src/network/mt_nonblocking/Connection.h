@@ -39,6 +39,7 @@ private:
     struct epoll_event _event;
 
     bool _is_alive;
+    std::mutex mutex;
     std::shared_ptr<spdlog::logger> _logger;
     std::shared_ptr<Afina::Storage> pStorage;
     std::unique_ptr<Afina::Execute::Command> command_to_execute;
@@ -46,8 +47,11 @@ private:
     Protocol::Parser parser;
     std::size_t arg_remains;
     std::string argument_for_command;
-};
 
+    int _written_bytes;
+    int _read_bytes;
+    int _bytes_for_read;
+    char client_buffer[4096];
 };
 
 } // namespace MTnonblock
