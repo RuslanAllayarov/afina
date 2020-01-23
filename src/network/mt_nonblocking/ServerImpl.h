@@ -4,7 +4,11 @@
 #include <thread>
 #include <vector>
 
+#include <set>
+#include <mutex>
+
 #include <afina/network/Server.h>
+#include "Connection.h"
 
 namespace spdlog {
 class logger;
@@ -58,11 +62,15 @@ private:
     // EPOLL instance shared between workers
     int _data_epoll_fd;
 
-    // Curstom event "device" used to wakeup workers
+    // Custom event "device" used to wakeup workers
     int _event_fd;
 
     // threads serving read/write requests
     std::vector<Worker> _workers;
+
+    std::set <Connection *> _connections;
+
+    std::mutex _mutex;
 };
 
 } // namespace MTnonblock
